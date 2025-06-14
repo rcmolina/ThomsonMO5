@@ -35,21 +35,21 @@ int mspause = 100;			// pause in ms
 long pw,pp;
 	  
 int head[46] = {0x52,0x49,0x46,0x46, // RIFF
-				0x00,0x00,0x00,0x00, // chunk size
-				0x57,0x41,0x56,0x45, //WAVE
+                0x00,0x00,0x00,0x00, // chunk size
+                0x57,0x41,0x56,0x45, //WAVE
                 0x66,0x6d,0x74,0x20, //fmt_
-				0x12,0x00,0x00,0x00, // 16 for PCM 
-				0x01,0x00,			 // 1 for LINEAR PCM
-				0x01,0x00, 			 // NUM CHANNELS
+                0x12,0x00,0x00,0x00, // 16 for PCM 
+                0x01,0x00,			 // 1 for LINEAR PCM
+                0x01,0x00, 			 // NUM CHANNELS
                 //0x44,0xac,0x00,0x00, // SAMPLE RATE
                 sample_freq-(sample_freq*256),sample_freq/256,0x00,0x00, // SAMPLE RATE				
-				//0x44,0xac,0x00,0x00, // BYTE RATE
-				sample_freq-(sample_freq*256),sample_freq/256,0x00,0x00, // BYTE RATE	   	   	   
-				0x01,0x00,			 //BLOCK ALIGN
-				0x08,0x00,			 // BITS PER SAMPLE
+                //0x44,0xac,0x00,0x00, // BYTE RATE
+                sample_freq-(sample_freq*256),sample_freq/256,0x00,0x00, // BYTE RATE	   	   	   
+                0x01,0x00,			 //BLOCK ALIGN
+                0x08,0x00,			 // BITS PER SAMPLE
                 0x00,0x00,			 // EXTRA PARAM SIZE
-				0x64,0x61,0x74,0x61, // DATA
-				0x00,0x00,0x00,0x00}; // NUMBER OF BYTES IN DATA
+                0x64,0x61,0x74,0x61, // DATA
+                0x00,0x00,0x00,0x00}; // NUMBER OF BYTES IN DATA
 
 void blank(FILE *fw);
 
@@ -153,16 +153,16 @@ int main(int argc, char **argv)
 
   if ( (l<1)||( (strcmp(&argv[k][l],".k5"))&&(strcmp(&argv[k][l],".K5"))&&(strcmp(&argv[k][l],".k7"))&&(strcmp(&argv[k][l],".K7")) ) )
   {
-    printf("erreur: mauvais ce n'est k5 fichier.\n");
-    return 1;
+     printf("erreur: mauvais ce n'est k5 fichier.\n");
+     return 1;
   }
 
   printf("ouverture de %s\n",argv[k]);
   fp=fopen(argv[k],"rb");
   if (fp==NULL)
   {
-    printf("erreur: fichier %s introuvable.\n",argv[k]);
-    return 0;
+     printf("erreur: fichier %s introuvable.\n",argv[k]);
+     return 0;
   }
 
   fseek(fp,0,SEEK_END);
@@ -177,100 +177,105 @@ int main(int argc, char **argv)
   fw=fopen(argv[k],"wb");
   if (fw==NULL)
   {
-    printf("erreur: fichier %s impossible a ouvrir.\n",argv[k]);
-    return 1;
+     printf("erreur: fichier %s impossible a ouvrir.\n",argv[k]);
+     return 1;
   }
 
   printf("valeur de pause: %d ms\n", mspause);
 
   /* Ecriture header WAV */
-
   for(i=0;i<46;i++) fputc(head[i],fw);
-
 
   blank(fw);
 
-  do
+  do		//do-while
   {
-    do
-    {
-      c=myfgetc(fp,fw);
-    } while (c==1);
+     do
+     {
+       c=myfgetc(fp,fw);
+     } while (c==1);
 
-    for (j=0;j<16;j++) writebyte(fw,1);
+     for (j=0;j<16;j++) writebyte(fw,1);
 
-    if (c==60)
-    {
-      writebyte(fw,60);
-      c=myfgetc(fp,fw);
-      if (c==90)
-      {
-        int s=0;
-        writebyte(fw,90);
-        b=myfgetc(fp,fw);
-        writebyte(fw,b);
-        l=myfgetc(fp,fw);
-        writebyte(fw,l);
-        if (l==0) l=256;
+     if (c==60)
+     {
+         writebyte(fw,60);
+         c=myfgetc(fp,fw);
+         if (c==90)
+         {
+            int s=0;
+            writebyte(fw,90);
+            b=myfgetc(fp,fw);
+            writebyte(fw,b);
+            l=myfgetc(fp,fw);
+            writebyte(fw,l);
+            if (l==0) l=256;
 
-        for (i=0;i<l-2;i++)
-        {
-          c=myfgetc(fp,fw);
-          writebyte(fw,c);
-          s=s+c;
-        }
-        c=myfgetc(fp,fw);
-		pp=ftell(fp)-1;
-        writebyte(fw,c);
-        if (((c+s)&255) && (b!=0xff)) printf("@ 0x%08X erreur checksum!? found=0x%02X should(256-sum)=0x%02X with sum=0x%02X\n", pp, c, 256-(s&255), s&255);
-      } else {			//c <>90
-		  pp=ftell(fp)-2;
-	      printf("@ 0x%08X erreur non 0x3C5A found=0x3C%02X\n", pp, c);
-/*
-		  do {
-		      writebyte(fw,c);
-		      c=myfgetc(fp,fw);
-		  } while (c!=1);
-		
-		  pw=ftell(fw);
-		  pp=ftell(fp)-1;
-		  do {
-		      writebyte(fw,c);
-		      c=myfgetc(fp,fw);
-		  } while (c==1);
+            for (i=0;i<l-2;i++)
+            {
+              c=myfgetc(fp,fw);
+              writebyte(fw,c);
+              s=s+c;
+            }
+            c=myfgetc(fp,fw);
+		    pp=ftell(fp)-1;
+            writebyte(fw,c);
+            if (((c+s)&255) && (b!=0xff)) printf("@ 0x%08X erreur checksum!? trouvee=0x%02X should(256-sum)=0x%02X avec sum=0x%02X\n", pp, c, 256-(s&255), s&255);
 
-		   
-	      fseek(fw,pw,SEEK_SET);
-	      fseek(fp,pp,SEEK_SET);
-*/	  	    
-	  }
-    }
-    else {		//c<>60
-	  pp=ftell(fp)-1;
-      printf("@ 0x%08X *Bloc Special found=0x%02X should=0x3C\n", pp, c);
-      do {
-      
-	    do {
-	      writebyte(fw,c);
-	      c=myfgetc(fp,fw);
-	    } while (c!=1);
+         } 
+         else {	 	 	 	 //c <>90
+            pp=ftell(fp)-2;
+            printf("@ 0x%08X *erreur en-Tete de Bloc non 0x3C5A trouvee=0x3C%02X\n", pp, c);
+      	    do {
+                do {
+                    writebyte(fw,c);
+                    c=myfgetc(fp,fw);
+                } while (c!=1);
+			
+                pw=ftell(fw);
+                pp=ftell(fp)-1;
+                do {
+                    writebyte(fw,c);
+                    c=myfgetc(fp,fw);
+                } while (c==1);
 	
-	    pw=ftell(fw);
-	    pp=ftell(fp)-1;
-	    do {
-	      writebyte(fw,c);
-	      c=myfgetc(fp,fw);
-	    } while (c==1);
+            } while (c!=60);
+			   
+            fseek(fw,pw,SEEK_SET);
+            fseek(fp,pp,SEEK_SET);	     	   	   	       
+         }
 
-      } while (c!=60);
+     }
+     else {	 	 //c<>60
+
+         pp=ftell(fp)-1;
+         printf("@ 0x%08X en-Tete Special de Bloc trouvee=0x%02X should=0x3C\n", pp, c);
+         do {
+		 
+	        do {
+	           writebyte(fw,c);
+	           c=myfgetc(fp,fw);
+	        } while (c!=1);
+	
+	        pw=ftell(fw);
+	        pp=ftell(fp)-1;
+
+	        do {
+	           writebyte(fw,c);
+	           c=myfgetc(fp,fw);
+	        } while (c==1);
+
+         } while (c!=60);
 	   
-      fseek(fw,pw,SEEK_SET);
-      fseek(fp,pp,SEEK_SET);
-    }
-    blank(fw);
+         fseek(fw,pw,SEEK_SET);
+         fseek(fp,pp,SEEK_SET);
+     }
+	
+     blank(fw);
+     c=myfgetc(fp,fw);
+     if (c==0) fseek(fp,0,SEEK_END);
 
-    c=myfgetc(fp,fw);
-    if (c==0) fseek(fp,0,SEEK_END);
-  } while (1);
+  } while (1);		//do-while
+
 }
 
