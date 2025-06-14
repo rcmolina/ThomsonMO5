@@ -33,6 +33,7 @@ int shortper = sample_freq/(rec_speed*2)*1.1;
 signed int spl = SPL;
 int mspause = 100;			// pause in ms
 long pw,pp;
+char *ext;
 	  
 int head[46] = {0x52,0x49,0x46,0x46, // RIFF
                 0x00,0x00,0x00,0x00, // chunk size
@@ -150,8 +151,10 @@ int main(int argc, char **argv)
   }
 
   l=strlen(argv[k])-3;
+  ext= strlwr(&argv[k][l]);
 
-  if ( (l<1)||( (strcmp(&argv[k][l],".k5"))&&(strcmp(&argv[k][l],".K5"))&&(strcmp(&argv[k][l],".k7"))&&(strcmp(&argv[k][l],".K7")) ) )
+  //if ( (l<1)||( (strcmp(&argv[k][l],".k5"))&&(strcmp(&argv[k][l],".K5"))&&(strcmp(&argv[k][l],".k7"))&&(strcmp(&argv[k][l],".K7")) ) )
+  if ( (l<1)||( (strcmp(ext,".k5"))&&(strcmp(ext,".k7")) ) )
   {
      printf("erreur: mauvais ce n'est k5 fichier.\n");
      return 1;
