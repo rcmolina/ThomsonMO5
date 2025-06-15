@@ -33,7 +33,6 @@ int shortper = sample_freq/(rec_speed*2)*1.1;
 signed int spl = SPL;
 int mspause = 100;			// pause in ms
 long pw,pp;
-char *ext;
 	  
 int head[46] = {0x52,0x49,0x46,0x46, // RIFF
                 0x00,0x00,0x00,0x00, // chunk size
@@ -133,6 +132,7 @@ int main(int argc, char **argv)
   int j,l,i,c,b;
   FILE *fp,*fw;
   int k; // argc position for read file
+  char *ext;
 
   //printf("conversion .k5 mo5 -> wav 44,1KHz 8 bits.\n");
   printf("conversion .k5 mo5 -> wav"); printf(" %dHz 8 bits.\n",sample_freq);  
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
 	
             } while (c!=60);
 			   
-            fseek(fw,pw,SEEK_SET);
+            fseek(fw,pw,SEEK_SET);	//Rewind at 01's synch for R/W
             fseek(fp,pp,SEEK_SET);	     	   	   	       
          }
 
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 
          } while (c!=60);
 	   
-         fseek(fw,pw,SEEK_SET);
+         fseek(fw,pw,SEEK_SET);		//Rewind at 01's synch for R/W
          fseek(fp,pp,SEEK_SET);
      }
 	
