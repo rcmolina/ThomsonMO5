@@ -19,7 +19,6 @@
 */
 
 //#define NO_PARSER
-#define NO_BLANKS
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,14 +116,13 @@ void writebyte(FILE *fw, int c)
 
 void blank(FILE *fw)
 {
-#ifdef NO_BLANKS
-#else
   int i;
-  for (i=0;i<(int)(0.5 + sample_freq*mspause/1000.0);i++) fputc(128,fw);
-  //for (i=0;i<sample_freq/10;i++) fputc(128,fw);
-  //spl=64;
-  spl = SPL;
-#endif
+  if (mspause) {
+    for (i=0;i<(int)(0.5 + sample_freq*mspause/1000.0);i++) fputc(128,fw);
+    //for (i=0;i<sample_freq/10;i++) fputc(128,fw);
+    //spl=64;
+    spl = SPL;
+  }
 }
 
 int getnumber(char *s)
