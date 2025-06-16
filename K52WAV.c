@@ -18,6 +18,9 @@
 
 */
 
+//#define NO_PARSER
+#define NO_BLANKS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +34,7 @@ int shortper = sample_freq/(rec_speed*2)*1.1;
 
 #define SPL 127
 signed int spl = SPL;
+signed int spl2 = SPL;
 int mspause = 100;			// pause in ms
 long pw,pp;
 	  
@@ -113,11 +117,14 @@ void writebyte(FILE *fw, int c)
 
 void blank(FILE *fw)
 {
+#ifdef NO_BLANKS
+#else
   int i;
   for (i=0;i<(int)(0.5 + sample_freq*mspause/1000.0);i++) fputc(128,fw);
   //for (i=0;i<sample_freq/10;i++) fputc(128,fw);
   //spl=64;
   spl = SPL;
+#endif
 }
 
 int getnumber(char *s)
@@ -169,8 +176,12 @@ int main(int argc, char **argv)
   }
 
   fseek(fp,0,SEEK_END);
-  //printf("Taille estimee du fichier .wav:  %i octets. Continuer (Y/N)? ",ftell(fp)*8*longper+ftell(fp)/255*sample_freq);
-  printf("Taille estimee du fichier .wav:  %i octets \n",ftell(fp)*8*longper+ftell(fp)/255*sample_freq);  
+  //printf("Taille estimee du fichier .wav:  %i octets. Continuer (Y/N)? ",ftell(fp)*8*longper+ftell(fp)/255*sample_freq); //fsize + blanks
+  #ifdef NO_BLANKS
+     printf("Taille estimee du fichier .wav:  %i octets \n",ftell(fp)*8*longper);   
+  #else
+     printf("Taille estimee du fichier .wav:  %i octets \n",ftell(fp)*8*longper + (ftell(fp)/255)*sample_freq/10);  
+  #endif
   fseek(fp,0,SEEK_SET);
   fflush(stdout);
 //  if (((c=getchar())!='y')&&(c!='Y')) exit(1);
@@ -189,16 +200,23 @@ int main(int argc, char **argv)
   /* Ecriture header WAV */
   for(i=0;i<46;i++) fputc(head[i],fw);
 
-  blank(fw);
+#ifdef NO_PARSER
+  do
+  {
+    c=myfgetc(fp,fw);
+    writebyte(fw,c);
+  } while (c!=EOF);
 
+#else
+  blank(fw);
+  c=myfgetc(fp,fw);
   do		//do-while
   {
      do
      {
+	   writebyte(fw,c);
        c=myfgetc(fp,fw);
      } while (c==1);
-
-     for (j=0;j<16;j++) writebyte(fw,1);
 
      if (c==60)
      {
@@ -227,8 +245,9 @@ int main(int argc, char **argv)
 
          } 
          else {	 	 	 	 //c <>90
-            pp=ftell(fp)-2;
+            pp=ftell(fp)-2;				//addr for 0x3C
             printf("@ 0x%08X *erreur en-Tete de Bloc non 0x3C5A trouvee=0x3C%02X\n", pp, c);
+
       	    do {
                 do {
                     writebyte(fw,c);
@@ -237,22 +256,32 @@ int main(int argc, char **argv)
 			
                 pw=ftell(fw);
                 pp=ftell(fp)-1;
+				spl2=spl;
+				
                 do {
                     writebyte(fw,c);
                     c=myfgetc(fp,fw);
                 } while (c==1);
 	
             } while (c!=60);
-			   
-            fseek(fw,pw,SEEK_SET);	//Rewind at 01's synch for R/W
-            fseek(fp,pp,SEEK_SET);	     	   	   	       
+
+            fseek(fw,pw,SEEK_SET);	   //Rewind at 01's synch for R/W
+            fseek(fp,pp,SEEK_SET);
+		    spl=spl2;
+/*
+            do {
+              writebyte(fw,c);
+              c=myfgetc(fp,fw);
+            } while (c!=EOF);
+*/	  	  	  	     	   	   	       
          }
 
      }
      else {	 	 //c<>60
 
          pp=ftell(fp)-1;
-         printf("@ 0x%08X en-Tete Special de Bloc trouvee=0x%02X should=0x3C\n", pp, c);
+         printf("@ 0x%08X en-Tete Special de Bloc non 0x3C trouvee=0x%02X\n", pp, c);
+		 
          do {
 		 
 	        do {
@@ -262,6 +291,8 @@ int main(int argc, char **argv)
 	
 	        pw=ftell(fw);
 	        pp=ftell(fp)-1;
+			spl2=spl;
+			
 
 	        do {
 	           writebyte(fw,c);
@@ -269,16 +300,24 @@ int main(int argc, char **argv)
 	        } while (c==1);
 
          } while (c!=60);
-	   
+        
          fseek(fw,pw,SEEK_SET);		//Rewind at 01's synch for R/W
          fseek(fp,pp,SEEK_SET);
+		 spl=spl2;
+/*
+         do {
+              writebyte(fw,c);
+              c=myfgetc(fp,fw);
+         } while (c!=EOF);	  	  	  	     	   	   	       
+*/
      }
-	
+
      blank(fw);
-     c=myfgetc(fp,fw);
+     c=myfgetc(fp,fw);					//read 01 sync and jump to start
      if (c==0) fseek(fp,0,SEEK_END);
 
   } while (1);		//do-while
 
+#endif
 }
 
